@@ -8,12 +8,16 @@
  * For additional samples, visit the Alexa Skills Kit Getting Started guide at
  * http://amzn.to/1LGWsLG
  */
- var speechOutput;
- var reprompt;
- var bacIntro = [
-   "Lets see if you're drunk",
-   "Time to calculate"
- ];
+
+var cardTitle;
+var speechOutput;
+var reprompt;
+var bacIntro = [
+ "Lets see if you're drunk",
+ "Time to calculate",
+ "Crunching the numbers",
+ "do do do do, I'm adding it up now, do do do"
+];
 
 // --------------- Helpers that build all of the responses -----------------------
 
@@ -25,8 +29,8 @@ function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
         },
         card: {
             type: 'Simple',
-            title: `SessionSpeechlet - ${title}`,
-            content: `SessionSpeechlet - ${output}`,
+            title: `${title}`,
+            content: `${output}`,
         },
         reprompt: {
             outputSpeech: {
@@ -69,7 +73,7 @@ function buildSpeechletResponseWithDirectiveNoIntent() {
                       "updatedIntent": null
                   }
               ],
-         reprompt: null,
+          reprompt: null,
           shouldEndSession: shouldEndSession
       };
   }
@@ -103,10 +107,8 @@ function getBAC(request, session, callback){
       delegateSlotCollection(request, sessionAttributes, callback);
     }
 
-    //compose speechOutput that simply reads all the collected slot values
     var speechOutput = randomPhrase(bacIntro);
 
-    //Now let's recap the trip
     var weight=request.intent.slots.weight.value;
     var gender=request.intent.slots.gender.value;
     var drinks=request.intent.slots.drinks.value;
@@ -117,11 +119,13 @@ function getBAC(request, session, callback){
       r = 0.68;
     } 
 
-    speechOutput += ", your blood alcohol level is " + (Math.round((drinks*140000)/(r*453.592*weight)) / 100).toString() + ". please be safe";
+    var bac = ((drinks*14)/(r*453.592*weight)) * 100;
+    bac = bac.toFixed(2);
+
+    speechOutput += ", your estimated blood alcohol level is " + bac.toString() + ". please be safe";
 
     //say the results
-    callback(sessionAttributes,
-        buildSpeechletResponse("Approximate BAC Level", speechOutput, "", true));
+    callback(sessionAttributes, buildSpeechletResponse("Approximate BAC Level", speechOutput, "", true));
 }
 
 function handleSessionEndRequest(callback) {
@@ -168,21 +172,6 @@ function randomPhrase(array) {
     i = Math.floor(Math.random() * array.length);
     return(array[i]);
 }
-function isSlotValid(request, slotName){
-        var slot = request.intent.slots[slotName];
-        //console.log("request = "+JSON.stringify(request)); //uncomment if you want to see the request
-        var slotValue;
-
-        //if we have a slot, get the text and store it into speechOutput
-        if (slot && slot.value) {
-            //we have a value in the slot
-            slotValue = slot.value.toLowerCase();
-            return slotValue;
-        } else {
-            //we didn't get a value in the slot.
-            return false;
-        }
-}
 
 
 // --------------- Events -----------------------
@@ -198,7 +187,6 @@ function onSessionStarted(sessionStartedRequest, session) {
  * Called when the user launches the skill without specifying what they want.
  */
 function onLaunch(request, session, callback) {
-    //console.log(`onLaunch requestId=${launchRequest.requestId}, sessionId=${session.sessionId}`);
     console.log("in launchRequest");
     console.log("  request: "+JSON.stringify(request));
     // Dispatch to your skill's launch.
@@ -209,7 +197,6 @@ function onLaunch(request, session, callback) {
  * Called when the user specifies an intent for this skill.
  */
 function onIntent(request, session, callback) {
-    //console.log(`onIntent requestId=${intentRequest.requestId}, sessionId=${session.sessionId}`);
     console.log("in onIntent");
     console.log("  request: "+JSON.stringify(request));
 
@@ -244,13 +231,8 @@ function onSessionEnded(sessionEndedRequest, session) {
 // etc.) The JSON body of the request is provided in the event parameter.
 exports.handler = (event, context, callback) => {
     try {
-        // console.log(`event.session.application.applicationId=${event.session.application.applicationId}`);
         console.log("EVENT=====" + JSON.stringify(event));
 
-        /**
-         * Uncomment this if statement and populate with your skill's application ID to
-         * prevent someone else from configuring a skill that sends requests to this function.
-         */
         if (event.session.application.applicationId !== 'amzn1.ask.skill.8e549758-3b3c-4660-b4d2-6ee43ce9e4e3') {
              callback('Invalid Application ID');
         }
